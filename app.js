@@ -6,6 +6,9 @@ var logger = require('morgan');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 
+const passport = require('passport');
+const authenticate = require('./authenticate');
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
@@ -46,6 +49,25 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
+function auth(req, res, next) {
+  console.log(req.user);
+
+  if (!req.user) {
+    const err = new Error('You are not authenticated!');                    
+    err.status = 401;
+    return next(err);
+} else {
+    return next();
+}
+}
+
+/* ----auth code prior to auth handling via userRouter, below----
 function auth(req, res, next) {
   console.log(req.session);
 
@@ -80,6 +102,7 @@ function auth(req, res, next) {
       }
   }
 }
+*/
 
 /*
 // we'll add authentication here because the following middleware functions start to receive responses(client side) from the server. If auth fails, the below middleware will not execute.
@@ -114,8 +137,8 @@ app.use(auth);
 // access to server data
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
+
 app.use('/campsites', campsiteRouter);
 app.use('/promotions', promotionRouter);
 app.use('/partners', partnerRouter);
